@@ -251,7 +251,7 @@ const Legend = ({
   ];
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 overflow-y-auto max-h-full">
       {data.map((item, index) => {
         const color = item.color || defaultColors[index % defaultColors.length];
 
@@ -311,10 +311,8 @@ export const PieChart = ({
   }));
 
   const isInteractive = onSliceClick && isDrillDownEnabled;
-  const chartSize = size === 'quarter' ? 150 : 200;
 
   return (
-    // Giữ nguyên cấu trúc
     <WidgetContainer size={size} className={className}>
       <div className={cn(
         widgetBaseStyles,
@@ -344,36 +342,45 @@ export const PieChart = ({
           ) : (
             <div className={cn(
               "flex gap-6 w-full h-full",
-              size === 'quarter' ? "flex-col items-center" : "items-center"
+              size === 'quarter' ? "flex-col items-center" : " justify-center",
             )}>
-              <div className="relative flex-shrink-0" style={{ width: chartSize, height: chartSize }}>
-                <PieChartSVG
-                  data={dataWithPercentages}
-                  variant={variant}
-                  onSliceClick={onSliceClick}
-                  size={chartSize}
-                  showPercentages={showPercentages}
-                />
+              {/* Chart container - 2/3 width */}
+              <div className={cn(
+                "flex items-center justify-center",
+                size === 'quarter' ? "w-full" : "w-2/5 flex-shrink-0"
+              )}>
+                <div className="relative w-full max-w-xs aspect-square">
+                  <PieChartSVG
+                    data={dataWithPercentages}
+                    variant={variant}
+                    onSliceClick={onSliceClick}
+                    size={200}
+                    showPercentages={showPercentages}
+                  />
 
-                {variant === 'doughnut' && (centerLabel || centerValue) && (
-
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    {centerLabel && (
-                      <div className="text-xs font-lexend text-gray-600 text-center">
-                        {centerLabel}
-                      </div>
-                    )}
-                    {centerValue && (
-                      <div className="text-lg font-poppins font-bold text-gray-900 text-center">
-                        {typeof centerValue === 'number' ? centerValue.toLocaleString() : centerValue}
-                      </div>
-                    )}
-                  </div>
-                )}
+                  {variant === 'doughnut' && (centerLabel || centerValue) && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      {centerLabel && (
+                        <div className="text-xs font-lexend text-gray-600 text-center">
+                          {centerLabel}
+                        </div>
+                      )}
+                      {centerValue && (
+                        <div className="text-lg font-poppins font-bold text-gray-900 text-center">
+                          {typeof centerValue === 'number' ? centerValue.toLocaleString() : centerValue}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
+              {/* Legend container - 1/3 width */}
               {showLegend && (
-                <div className="flex-1 min-w-0">
+                <div className={cn(
+                  "flex flex-col",
+                  size === 'quarter' ? "w-full mt-4" : "w-3/5 min-w-0"
+                )}>
                   <Legend data={dataWithPercentages} onItemClick={onSliceClick} />
                 </div>
               )}

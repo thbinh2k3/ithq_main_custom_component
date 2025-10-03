@@ -43,7 +43,7 @@ export interface BarChartProps {
   isDrillDownEnabled?: boolean;
 }
 
-// 🔹 Helper: chọn màu chữ tương phản với nền
+// 🔹 Helper: chọn màu chữ tương phản với nền (Giữ nguyên logic)
 const getTextColorForBackground = (bgColor: string): string => {
   if (bgColor.startsWith("bg-")) {
     if (
@@ -68,7 +68,7 @@ const getTextColorForBackground = (bgColor: string): string => {
   return "text-gray-900";
 };
 
-// Tooltip component
+// Tooltip component (Giữ nguyên)
 const Tooltip = ({
   show,
   x,
@@ -140,14 +140,18 @@ const Bar = ({
 
   const barColor = data.color || 'bg-ithq-teal-600';
 
-  // vị trí text
+  // 🔴 ĐIỀU CHỈNH: Đặt text value luôn là màu đen (text-gray-900)
+  const valueTextColorClass = "text-gray-900";
+
+  // vị trí text đã được chỉnh sửa để sử dụng màu đen cố định và tạo khoảng cách top
   const labelClass = isVertical
     ? isShort
-      ? "bottom-[calc(100%+4px)] left-1/2 -translate-x-1/2 text-gray-900"
-      : "bottom-1 left-1/2 -translate-x-1/2 " + getTextColorForBackground(barColor)
+      ? "bottom-[calc(100%+4px)] left-1/2 -translate-x-1/2 " + valueTextColorClass // Ngoài bar: màu đen
+      // 🔴 SỬA: Đặt top-[2px] để tạo khoảng cách (thay cho bottom-1)
+      : "top-[5px] left-1/2 -translate-x-1/2 " + valueTextColorClass
     : isShort
-      ? "left-[calc(100%+8px)] top-1/2 -translate-y-1/2 text-gray-900"
-      : "right-2 top-1/2 -translate-y-1/2 " + getTextColorForBackground(barColor);
+      ? "left-[calc(100%+8px)] top-1/2 -translate-y-1/2 " + valueTextColorClass // Ngoài bar: màu đen
+      : "right-2 top-1/2 -translate-y-1/2 " + valueTextColorClass; // Trong bar ngang: màu đen
 
   return (
     <>
@@ -283,11 +287,13 @@ const StackedBar = ({
               "absolute text-xs font-lexend font-medium",
               isVertical
                 ? isShort
-                  ? "bottom-[calc(100%+4px)] left-1/2 -translate-x-1/2 text-gray-900"
-                  : "bottom-1 left-1/2 -translate-x-1/2 text-white"
+                  ? "bottom-[calc(100%+4px)] left-1/2 -translate-x-1/2 text-gray-900" // Ngoài bar: màu đen
+                  // 🔴 SỬA: Đặt top-[2px] để tạo khoảng cách (thay cho bottom-1/text-black)
+                  : "top-[2px] left-1/2 -translate-x-1/2 text-gray-900"
                 : isShort
-                  ? "left-[calc(100%+8px)] top-1/2 -translate-y-1/2 text-gray-900"
-                  : "right-2 top-1/2 -translate-y-1/2 text-white"
+                  ? "left-[calc(100%+8px)] top-1/2 -translate-y-1/2 text-gray-900" // Ngoài bar: màu đen
+                  // 🔴 SỬA: Trong bar ngang: màu đen (thay cho text-black)
+                  : "right-2 top-1/2 -translate-y-1/2 text-gray-900"
             )}>
               {totalValue?.toLocaleString()}
             </div>
@@ -358,7 +364,7 @@ export const BarChart = ({
             <div className={cn(
               "space-y-4",
               orientation === 'vertical'
-                ? "flex justify-between items-center h-40"
+                ? "flex justify-between items-end h-40" // 👈 SỬA: items-end để căn bar về đáy
                 : "space-y-3"
             )}>
               {displayData.map((dataPoint, index) =>
