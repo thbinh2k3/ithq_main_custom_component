@@ -1,12 +1,17 @@
 import { ReactNode } from 'react';
 import { cn } from '../../lib/utils';
-import { 
-  WidgetSize, 
-  responsiveSizeClasses, 
-  widgetBaseStyles, 
-  widgetHeaderStyles, 
-  widgetContentStyles 
+import {
+  WidgetSize,
+  responsiveSizeClasses,
+  // Giả định widgetBaseStyles giờ không còn rounded-xl và shadow-lg
+  widgetBaseStyles,
+  widgetHeaderStyles,
+  widgetContentStyles
 } from './widget-styles';
+
+// Định nghĩa lại style cơ sở của Widget (chỉ giữ màu nền và padding)
+// Cần đảm bảo widgetBaseStyles trong file widget-styles.ts chỉ chứa: "bg-white p-6 h-full flex flex-col"
+const baseStylesWithoutShadow = "bg-white p-6 h-full flex flex-col";
 
 interface WidgetContainerProps {
   size: WidgetSize;
@@ -24,6 +29,8 @@ export const WidgetContainer = ({ size, children, className }: WidgetContainerPr
     <div className={cn(
       responsiveSizeClasses[size],
       "transition-all duration-200",
+      // ✅ KHẮC PHỤC LỖI VIỀN: Áp dụng bo góc, đổ bóng VÀ cắt góc ở đây
+      "rounded-2xl shadow-lg overflow-hidden",
       className
     )}>
       {children}
@@ -35,7 +42,7 @@ export const WidgetGrid = ({ children, className }: WidgetGridProps) => {
   return (
     <div className={cn(
       "grid grid-cols-4 gap-6 w-full",
-      "auto-rows-min", // Ensures rows size to content
+      "auto-rows-min",
       className
     )}>
       {children}
@@ -43,11 +50,10 @@ export const WidgetGrid = ({ children, className }: WidgetGridProps) => {
   );
 };
 
-// Widget loading state
 export const WidgetSkeleton = ({ size }: { size: WidgetSize }) => {
   return (
     <WidgetContainer size={size}>
-      <div className={cn(widgetBaseStyles, "animate-pulse")}>
+      <div className={cn(baseStylesWithoutShadow, "animate-pulse")}>
         <div className={widgetHeaderStyles}>
           <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
           <div className="h-3 bg-gray-100 rounded w-3/4"></div>
@@ -60,11 +66,10 @@ export const WidgetSkeleton = ({ size }: { size: WidgetSize }) => {
   );
 };
 
-// Widget error state
 export const WidgetError = ({ size, message }: { size: WidgetSize; message?: string }) => {
   return (
     <WidgetContainer size={size}>
-      <div className={cn(widgetBaseStyles, "border-red-200 bg-red-50")}>
+      <div className={cn(baseStylesWithoutShadow, "border-red-200 bg-red-50")}>
         <div className={widgetContentStyles}>
           <div className="text-center py-8">
             <div className="text-red-600 mb-2">⚠️</div>

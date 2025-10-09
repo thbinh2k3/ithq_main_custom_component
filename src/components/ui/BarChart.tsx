@@ -1,7 +1,7 @@
 import { useState, MouseEvent } from 'react';
 import { BarChart3 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { WidgetContainer } from '../widgets/WidgetGrid';
+import { WidgetContainer } from '../widgets/WidgetGrid'; // Đã sửa WidgetContainer ở trên
 import {
   WidgetSize,
   widgetBaseStyles,
@@ -10,6 +10,7 @@ import {
   responsiveSizeClasses
 } from '../widgets/widget-styles';
 
+// ================== DATA TYPES ==================
 export interface BarDataPoint {
   label: string;
   value: number;
@@ -37,49 +38,13 @@ export interface BarChartProps {
   isStacked?: boolean;
   showValues?: boolean;
   showTooltips?: boolean;
-  maxBars?: number;
   className?: string;
   onBarClick?: (dataPoint: BarDataPoint | StackedBarDataPoint, segmentIndex?: number) => void;
   isDrillDownEnabled?: boolean;
 }
 
-// 🔹 Helper: chọn màu chữ tương phản với nền (Giữ nguyên logic)
-const getTextColorForBackground = (bgColor: string): string => {
-  if (bgColor.startsWith("bg-")) {
-    if (
-      bgColor.includes("-600") ||
-      bgColor.includes("-700") ||
-      bgColor.includes("-800") ||
-      bgColor.includes("-900")
-    ) {
-      return "text-white";
-    }
-    return "text-gray-900";
-  }
-
-  if (bgColor.startsWith("#") && bgColor.length === 7) {
-    const r = parseInt(bgColor.slice(1, 3), 16);
-    const g = parseInt(bgColor.slice(3, 5), 16);
-    const b = parseInt(bgColor.slice(5, 7), 16);
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    return brightness < 128 ? "text-white" : "text-gray-900";
-  }
-
-  return "text-gray-900";
-};
-
-// Tooltip component (Giữ nguyên)
-const Tooltip = ({
-  show,
-  x,
-  y,
-  content
-}: {
-  show: boolean;
-  x: number;
-  y: number;
-  content: string;
-}) => {
+// ================== TOOLTIP ==================
+const Tooltip = ({ show, x, y, content }: { show: boolean; x: number; y: number; content: string }) => {
   if (!show) return null;
   return (
     <div
@@ -91,34 +56,36 @@ const Tooltip = ({
       }}
     >
       {content}
+      {/* Tooltip đã được sửa lại vị trí để hiển thị tốt hơn */}
     </div>
   );
 };
 
-// Bar component
+// ================== BAR ==================
 const Bar = ({
   data,
   maxValue,
   orientation,
   showValues,
-  onBarClick,
-  index
+  onBarClick
 }: {
   data: BarDataPoint;
   maxValue: number;
   orientation: 'vertical' | 'horizontal';
   showValues: boolean;
   onBarClick?: (dataPoint: BarDataPoint | StackedBarDataPoint, segmentIndex?: number) => void;
-  index: number;
 }) => {
   const [tooltip, setTooltip] = useState<{ show: boolean; x: number; y: number; content: string }>({
-    show: false, x: 0, y: 0, content: ''
+    show: false,
+    x: 0,
+    y: 0,
+    content: ''
   });
 
   const percentage = (data.value / maxValue) * 100;
   const isVertical = orientation === 'vertical';
-  const threshold = 20; // % tối thiểu để text nằm trong bar
-  const isShort = percentage < threshold;
+  const threshold = 95;
+  const isLongEnough = percentage >= threshold;
 
   const handleMouseEnter = (e: MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -130,54 +97,29 @@ const Bar = ({
     });
   };
 
-  const handleMouseLeave = () => {
-    setTooltip({ show: false, x: 0, y: 0, content: '' });
-  };
-
-  const handleClick = () => {
-    if (onBarClick) onBarClick(data);
-  };
-
+  const handleMouseLeave = () => setTooltip({ show: false, x: 0, y: 0, content: '' });
+  const handleClick = () => onBarClick && onBarClick(data);
   const barColor = data.color || 'bg-ithq-teal-600';
-
-  // 🔴 ĐIỀU CHỈNH: Đặt text value luôn là màu đen (text-gray-900)
-  const valueTextColorClass = "text-gray-900";
-
-  // vị trí text đã được chỉnh sửa để sử dụng màu đen cố định và tạo khoảng cách top
-  const labelClass = isVertical
-    ? isShort
-      ? "bottom-[calc(100%+4px)] left-1/2 -translate-x-1/2 " + valueTextColorClass // Ngoài bar: màu đen
-      // 🔴 SỬA: Đặt top-[2px] để tạo khoảng cách (thay cho bottom-1)
-      : "top-[5px] left-1/2 -translate-x-1/2 " + valueTextColorClass
-    : isShort
-      ? "left-[calc(100%+8px)] top-1/2 -translate-y-1/2 " + valueTextColorClass // Ngoài bar: màu đen
-      : "right-2 top-1/2 -translate-y-1/2 " + valueTextColorClass; // Trong bar ngang: màu đen
 
   return (
     <>
-      <div className={cn(
-        "group relative",
-        isVertical ? "flex flex-col items-center" : "flex items-center gap-3"
-      )}>
-        <div className={cn(
-          "text-xs font-lexend text-gray-600 flex-shrink-0",
-          isVertical ? "mb-2 text-center" : "w-20 text-right"
-        )}>
+      <div className={cn("group relative", isVertical ? "flex flex-col items-center h-full" : "flex items-center gap-3")}>
+        <div className={cn("text-xs font-lexend text-gray-600 flex-shrink-0", isVertical ? "mb-2 text-center" : "w-20 text-right")}>
           {data.label}
         </div>
 
         <div className={cn(
           "relative",
           onBarClick && "cursor-pointer",
-          isVertical ? "w-12 h-32 bg-gray-100 rounded-t" : "h-6 flex-1 bg-gray-100 rounded-r"
+          isVertical
+            ? "w-12 flex-1 bg-gray-100 rounded-t"
+            : "min-h-[3rem] h-full flex-1 bg-gray-100 rounded-r"
         )}>
           <div
             className={cn(
               barColor,
-              "rounded transition-all duration-300 hover:opacity-80",
-              isVertical
-                ? "w-full absolute bottom-0 rounded-t"
-                : "h-full absolute left-0 rounded-r"
+              "transition-all duration-300 hover:opacity-80",
+              isVertical ? "w-full absolute bottom-0 rounded-t" : "h-full absolute left-0 rounded-r"
             )}
             style={{ [isVertical ? 'height' : 'width']: `${percentage}%` }}
             onMouseEnter={handleMouseEnter}
@@ -186,45 +128,53 @@ const Bar = ({
           />
 
           {showValues && (
-            <div className={cn(
-              "absolute text-xs font-lexend font-medium",
-              labelClass
-            )}>
+            <div
+              className={cn(
+                "absolute text-xs font-lexend font-medium",
+                isVertical
+                  ? (isLongEnough
+                    ? "top-1 left-1/2 -translate-x-1/2"
+                    : "bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2")
+                  : "right-2 top-1/2 -translate-y-1/2",
+                isLongEnough ? "text-white" : "text-gray-900"
+              )}
+            >
               {data.value?.toLocaleString()}
             </div>
           )}
         </div>
       </div>
-
       <Tooltip {...tooltip} />
     </>
   );
 };
 
-// Stacked bar component
+// ================== STACKED BAR ==================
 const StackedBar = ({
   data,
   maxValue,
   orientation,
   showValues,
-  onBarClick,
-  index
+  onBarClick
 }: {
   data: StackedBarDataPoint;
   maxValue: number;
   orientation: 'vertical' | 'horizontal';
   showValues: boolean;
   onBarClick?: (dataPoint: BarDataPoint | StackedBarDataPoint, segmentIndex?: number) => void;
-  index: number;
 }) => {
   const [tooltip, setTooltip] = useState<{ show: boolean; x: number; y: number; content: string }>({
-    show: false, x: 0, y: 0, content: ''
+    show: false,
+    x: 0,
+    y: 0,
+    content: ''
   });
 
   const totalValue = data.segments.reduce((sum, segment) => sum + segment.value, 0);
   const totalPercentage = (totalValue / maxValue) * 100;
   const isVertical = orientation === 'vertical';
-  const isShort = totalPercentage < 20;
+  const threshold = 95;
+  const isLongEnough = totalPercentage >= threshold;
 
   const handleSegmentHover = (e: MouseEvent, segment: StackedBarDataPoint['segments'][0]) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -236,44 +186,41 @@ const StackedBar = ({
     });
   };
 
-  const handleMouseLeave = () => {
-    setTooltip({ show: false, x: 0, y: 0, content: '' });
-  };
+  const handleMouseLeave = () => setTooltip({ show: false, x: 0, y: 0, content: '' });
 
   return (
     <>
-      <div className={cn(
-        "group relative",
-        isVertical ? "flex flex-col items-center" : "flex items-center gap-3"
-      )}>
-        <div className={cn(
-          "text-xs font-lexend text-gray-600 flex-shrink-0",
-          isVertical ? "mb-2 text-center" : "w-20 text-right"
-        )}>
+      <div className={cn("group relative", isVertical ? "flex flex-col items-center h-full" : "flex items-center gap-3")}>
+        <div className={cn("text-xs font-lexend text-gray-600 flex-shrink-0", isVertical ? "mb-2 text-center" : "w-20 text-right")}>
           {data.label}
         </div>
 
         <div className={cn(
           "relative",
-          isVertical ? "w-12 h-32 bg-gray-100 rounded-t" : "h-6 flex-1 bg-gray-100 rounded-r"
+          isVertical ? "w-12 flex-1 bg-gray-100 rounded-t" : "h-10 flex-1 bg-gray-100 rounded-r"
         )}>
           {data.segments.map((segment, segmentIndex) => {
-            const segmentPercentage = (segment.value / totalValue) * totalPercentage;
+            const segmentRelativePercentage = (segment.value / totalValue) * 100;
+            const segmentPercentage = (segment.value / maxValue) * 100;
             const segmentColor = segment.color || `bg-ithq-teal-${600 - segmentIndex * 100}`;
+            const isLastSegment = segmentIndex === data.segments.length - 1;
+            const segmentRoundedClass = isLastSegment ? (isVertical ? "rounded-t" : "rounded-r") : "";
+
+            const offsetPercentage = data.segments.slice(0, segmentIndex).reduce((sum, s) =>
+              sum + ((s.value / maxValue) * 100), 0
+            );
 
             return (
               <div
                 key={segmentIndex}
                 className={cn(
                   segmentColor,
-                  "absolute transition-all duration-300 hover:opacity-80 cursor-pointer"
+                  "absolute transition-all duration-300 hover:opacity-80 cursor-pointer",
+                  segmentRoundedClass
                 )}
                 style={{
                   [isVertical ? 'height' : 'width']: `${segmentPercentage}%`,
-                  [isVertical ? 'bottom' : 'left']:
-                    data.segments.slice(0, segmentIndex).reduce((sum, s) =>
-                      sum + ((s.value / totalValue) * totalPercentage), 0
-                    ) + '%'
+                  [isVertical ? 'bottom' : 'left']: `${offsetPercentage}%`
                 }}
                 onMouseEnter={(e) => handleSegmentHover(e, segment)}
                 onMouseLeave={handleMouseLeave}
@@ -283,78 +230,65 @@ const StackedBar = ({
           })}
 
           {showValues && (
-            <div className={cn(
-              "absolute text-xs font-lexend font-medium",
-              isVertical
-                ? isShort
-                  ? "bottom-[calc(100%+4px)] left-1/2 -translate-x-1/2 text-gray-900" // Ngoài bar: màu đen
-                  // 🔴 SỬA: Đặt top-[2px] để tạo khoảng cách (thay cho bottom-1/text-black)
-                  : "top-[2px] left-1/2 -translate-x-1/2 text-gray-900"
-                : isShort
-                  ? "left-[calc(100%+8px)] top-1/2 -translate-y-1/2 text-gray-900" // Ngoài bar: màu đen
-                  // 🔴 SỬA: Trong bar ngang: màu đen (thay cho text-black)
-                  : "right-2 top-1/2 -translate-y-1/2 text-gray-900"
-            )}>
+            <div
+              className={cn(
+                "absolute text-xs font-lexend font-medium",
+                isVertical
+                  ? (isLongEnough
+                    ? "top-1 left-1/2 -translate-x-1/2"
+                    : "bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2")
+                  : "right-2 top-1/2 -translate-y-1/2",
+                isLongEnough ? "text-white" : "text-gray-900"
+              )}
+            >
               {totalValue?.toLocaleString()}
             </div>
           )}
         </div>
       </div>
-
       <Tooltip {...tooltip} />
     </>
   );
 };
 
-
+// ================== MAIN CHART ==================
 export const BarChart = ({
   size = 'half',
   title,
   subtitle,
   data,
   orientation = 'vertical',
-  isStacked = false,
+  isStacked,
   showValues = true,
   showTooltips = true,
-  maxBars = 10,
   className,
   onBarClick,
   isDrillDownEnabled = true
 }: BarChartProps) => {
-  const displayData = data.slice(0, maxBars);
+
+  const autoIsStacked = Array.isArray(data) && data.length > 0 && 'segments' in data[0];
+  const useStacked = isStacked ?? autoIsStacked;
+
+  const displayData = data;
 
   const maxValue = Math.max(...displayData.map(d =>
-    isStacked && 'segments' in d
-      ? d.segments.reduce((sum, segment) => sum + segment.value, 0)
-      : 'value' in d ? d.value : 0
+    'segments' in d ? d.segments.reduce((sum, s) => sum + s.value, 0) : 'value' in d ? d.value : 0
   ));
-
   const isInteractive = onBarClick && isDrillDownEnabled;
 
   return (
-    <WidgetContainer
-      size={size}
-      className={cn(responsiveSizeClasses[size], className)}
-    >
-      <div className={cn(
-        widgetBaseStyles,
-        isInteractive && "group relative"
-      )}>
-        <div className={widgetHeaderStyles}>
+    <WidgetContainer size={size} className={cn(responsiveSizeClasses[size], className)}>
+      <div className={cn(widgetBaseStyles, isInteractive && "group relative")}>
+        <div className={cn(widgetHeaderStyles, "**border-b border-gray-200**",
+          "p-6 rounded-t-2xl")}>
           <div className="flex items-center gap-2 mb-2">
             <BarChart3 className="h-5 w-5 text-ithq-teal-600" />
-            <h3 className="text-lg font-poppins font-semibold text-gray-900">
-              {title}
-            </h3>
+            <h3 className="text-lg font-poppins font-semibold text-gray-900">{title}</h3>
           </div>
-          {subtitle && (
-            <p className="text-sm text-gray-600 font-lexend">
-              {subtitle}
-            </p>
-          )}
+          {subtitle && <p className="text-sm text-gray-600 font-lexend">{subtitle}</p>}
         </div>
 
-        <div className={widgetContentStyles}>
+        <div className={cn(widgetContentStyles, "flex-1 flex flex-col")}>
           {displayData.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -362,13 +296,13 @@ export const BarChart = ({
             </div>
           ) : (
             <div className={cn(
-              "space-y-4",
+              "flex-1",
               orientation === 'vertical'
-                ? "flex justify-between items-end h-40" // 👈 SỬA: items-end để căn bar về đáy
-                : "space-y-3"
+                ? "flex justify-between items-end min-h-[12rem]"
+                : "flex flex-col justify-between gap-1 min-h-[16em]"
             )}>
               {displayData.map((dataPoint, index) =>
-                isStacked && 'segments' in dataPoint ? (
+                useStacked && 'segments' in dataPoint ? (
                   <StackedBar
                     key={index}
                     data={dataPoint as StackedBarDataPoint}
@@ -376,7 +310,6 @@ export const BarChart = ({
                     orientation={orientation}
                     showValues={showValues}
                     onBarClick={onBarClick}
-                    index={index}
                   />
                 ) : (
                   <Bar
@@ -386,7 +319,6 @@ export const BarChart = ({
                     orientation={orientation}
                     showValues={showValues}
                     onBarClick={onBarClick}
-                    index={index}
                   />
                 )
               )}
