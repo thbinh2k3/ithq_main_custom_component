@@ -49,7 +49,7 @@ const formatTimestamp = (timestamp: string, format: 'date' | 'datetime' | 'time'
   }
 };
 
-// Tooltip component (Giữ nguyên cấu trúc/màu)
+// Tooltip component
 const Tooltip = ({
   show,
   x,
@@ -279,7 +279,7 @@ const LineChartSVG = ({
         {Object.entries(multiLine!).map(([seriesName, seriesData], seriesIndex) => {
           const linePath = generateLinePath(seriesData);
           const colorClass = colors[seriesIndex % colors.length];
-          const fillClass = fillColors[seriesIndex % fillColors.length];
+          // const fillClass = fillColors[seriesIndex % fillColors.length]; // Không sử dụng vì chỉ series 0 có area
 
           return (
             <g key={seriesName}>
@@ -406,7 +406,8 @@ export const LineChart = ({
     // Giữ nguyên cấu trúc/class của widget container
     <div className={cn("w-full h-full bg-white rounded-lg border border-gray-200 shadow-sm", className)}>
       <div className="h-full flex flex-col p-6">
-        {/* Header */}
+
+        {/* Header - Ở trên cùng */}
         <div className="flex-shrink-0 mb-4">
           <div className="flex items-center gap-2 mb-2">
             {/* KHÔI PHỤC: class màu Tailwind cho icon */}
@@ -422,31 +423,9 @@ export const LineChart = ({
               {subtitle}
             </p>
           )}
-
-          {/* Legend */}
-          {multiLine && (
-            <div className="w-full">
-              <div className="flex flex-wrap gap-3 mt-3">
-                {Object.keys(multiLine).map((seriesName, index) => {
-                  const colorClass = legendColors[index % legendColors.length];
-
-                  return (
-                    <div key={seriesName} className="flex items-center gap-2">
-                      <div className={cn("w-3 h-3 rounded-full", colorClass)} />
-                      <span className="text-xs font-lexend text-gray-600">{seriesName}</span>
-                    </div>
-                  );
-                })}
-              </div>
-              {/* Divider dưới legend */}
-              <div className="w-full border-b border-gray-200 mt-3 mb-4" />
-            </div>
-          )}
-
         </div>
 
-
-        {/* Chart Content */}
+        {/* Chart Content - Ở giữa, chiếm không gian còn lại (flex-1) */}
         <div ref={containerRef} className="flex-1 min-h-0">
           {!hasData ? (
             <div className="flex items-center justify-center h-full text-center text-gray-500">
@@ -472,64 +451,28 @@ export const LineChart = ({
             </div>
           )}
         </div>
+
+        {/* Legend - Di chuyển xuống dưới cùng của flex container */}
+        {multiLine && (
+          // Đảm bảo div này không co lại khi không cần thiết, và tạo khoảng cách
+          <div className="w-full flex-shrink-0 mt-4 pt-4 border-t border-gray-200">
+            <div className="flex flex-wrap gap-3">
+              {Object.keys(multiLine).map((seriesName, index) => {
+                const colorClass = legendColors[index % legendColors.length];
+
+                return (
+                  <div key={seriesName} className="flex items-center gap-2">
+                    <div className={cn("w-3 h-3 rounded-full", colorClass)} />
+                    <span className="text-xs font-lexend text-gray-600">{seriesName}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Đã loại bỏ divider cũ, thay bằng border-t trên div cha và pt-4 */}
+          </div>
+        )}
+
       </div>
     </div>
   );
 };
-
-// Demo (Giữ nguyên cấu trúc demo mới)
-export default function App() {
-  const demoData: LineDataPoint[] = [
-    { timestamp: '2024-01-01', value: 100 },
-    { timestamp: '2024-02-01', value: 150 },
-    { timestamp: '2024-03-01', value: 120 },
-    { timestamp: '2024-04-01', value: 180 },
-    { timestamp: '2024-05-01', value: 200 },
-    { timestamp: '2024-06-01', value: 170 }
-  ];
-
-  const multiLineData = {
-    'Series A': [
-      { timestamp: '2024-01-01', value: 100 },
-      { timestamp: '2024-02-01', value: 150 },
-      { timestamp: '2024-03-01', value: 120 },
-      { timestamp: '2024-04-01', value: 180 },
-      { timestamp: '2024-05-01', value: 200 },
-      { timestamp: '2024-06-01', value: 170 }
-    ],
-    'Series B': [
-      { timestamp: '2024-01-01', value: 80 },
-      { timestamp: '2024-02-01', value: 90 },
-      { timestamp: '2024-03-01', value: 110 },
-      { timestamp: '2024-04-01', value: 100 },
-      { timestamp: '2024-05-01', value: 140 },
-      { timestamp: '2024-06-01', value: 125 }
-    ]
-  };
-
-  return (
-    <div className="grid grid-cols-2 gap-4 w-full h-screen p-4 bg-gray-50">
-      <LineChart
-        title="Sales Trend (Single Line)"
-        subtitle="Monthly performance"
-        data={demoData}
-        timeFormat="date"
-        showArea={true}
-        showPoints={true}
-        valueFormatter={(val) => `$${val.toLocaleString()}`}
-        onPointClick={(point) => console.log('Clicked:', point)}
-      />
-      <LineChart
-        title="Revenue Trend (Multi-Line)"
-        subtitle="Comparing Series A and B"
-        data={[]} // Data rỗng vì dùng multiLine
-        multiLine={multiLineData}
-        timeFormat="date"
-        showArea={true}
-        showPoints={true}
-        valueFormatter={(val) => `$${val.toLocaleString()}`}
-        onPointClick={(point, series) => console.log(`Clicked on ${series}:`, point)}
-      />
-    </div>
-  );
-}

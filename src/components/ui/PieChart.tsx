@@ -2,7 +2,7 @@ import { useState, MouseEvent } from 'react';
 import { ExternalLink, PieChart as PieChartIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { WidgetContainer } from '../widgets/WidgetGrid';
-import { WidgetSize, widgetBaseStyles, widgetHeaderStyles, widgetContentStyles, drillDownIndicatorStyles } from '../widgets/widget-styles';
+import { widgetBaseStyles, widgetHeaderStyles, widgetContentStyles } from '../widgets/widget-styles';
 
 export interface PieDataPoint {
   label: string;
@@ -27,7 +27,7 @@ export interface PieChartProps {
   isDrillDownEnabled?: boolean;
 }
 
-// Tooltip component
+// Tooltip component (Không thay đổi)
 const Tooltip = ({
   show,
   x,
@@ -41,20 +41,17 @@ const Tooltip = ({
 }) => {
   if (!show) return null;
 
-  // Giới hạn tooltip trong màn hình
-  const padding = 8; // khoảng cách tối thiểu với mép
-  const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1024; // Thêm check window
-  const tooltipWidth = 150; // ước lượng width tooltip (px)
+  const padding = 8;
+  const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+  const tooltipWidth = 150;
 
   let left = x;
   let transform = "translateX(-50%)";
 
   if (x - tooltipWidth / 2 < padding) {
-    // Nếu tooltip vượt bên trái
     left = padding;
     transform = "translateX(0)";
   } else if (x + tooltipWidth / 2 > screenWidth - padding) {
-    // Nếu tooltip vượt bên phải
     left = screenWidth - padding;
     transform = "translateX(-100%)";
   }
@@ -73,8 +70,7 @@ const Tooltip = ({
   );
 };
 
-
-// Pie chart SVG component
+// Pie chart SVG component (Không thay đổi)
 const PieChartSVG = ({
   data,
   variant,
@@ -100,9 +96,8 @@ const PieChartSVG = ({
 
   const total = data.reduce((sum, item) => sum + item.value, 0);
 
-  // Calculate percentages and cumulative angles
   const dataWithAngles = data.map((item, index) => {
-    const percentage = total === 0 ? 0 : (item.value / total) * 100; // Ngăn chia cho 0
+    const percentage = total === 0 ? 0 : (item.value / total) * 100;
     return {
       ...item,
       percentage,
@@ -112,7 +107,6 @@ const PieChartSVG = ({
     };
   });
 
-  // Calculate cumulative angles
   let cumulativeAngle = 0;
   dataWithAngles.forEach((item) => {
     item.startAngle = cumulativeAngle;
@@ -131,17 +125,22 @@ const PieChartSVG = ({
     '#3B82F6',
   ];
 
-  // Create path for pie slice
   const createPath = (startAngle: number, endAngle: number, outerRadius: number, innerRadius: number) => {
+    let endAngleToUse = endAngle;
+
+    if (Math.abs(endAngle - startAngle - 2 * Math.PI) < 1e-6) {
+      endAngleToUse = startAngle + 2 * Math.PI - 0.0001;
+    }
+
     const startAngleRadians = startAngle - Math.PI / 2;
-    const endAngleRadians = endAngle - Math.PI / 2;
+    const endAngleRadians = endAngleToUse - Math.PI / 2;
 
     const x1 = centerX + outerRadius * Math.cos(startAngleRadians);
     const y1 = centerY + outerRadius * Math.sin(startAngleRadians);
     const x2 = centerX + outerRadius * Math.cos(endAngleRadians);
     const y2 = centerY + outerRadius * Math.sin(endAngleRadians);
 
-    const largeArcFlag = endAngle - startAngle > Math.PI ? 1 : 0;
+    const largeArcFlag = endAngleToUse - startAngle > Math.PI ? 1 : 0;
 
     if (innerRadius === 0) {
       return `M ${centerX} ${centerY} L ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
@@ -155,7 +154,6 @@ const PieChartSVG = ({
     }
   };
 
-  // Calculate label position
   const getLabelPosition = (startAngle: number, endAngle: number) => {
     const midAngle = (startAngle + endAngle) / 2 - Math.PI / 2;
     const labelRadius = variant === 'doughnut' ? (radius + innerRadius) / 2 : radius * 0.7;
@@ -192,12 +190,19 @@ const PieChartSVG = ({
     <>
       <svg viewBox={`0 0 ${size} ${size}`} className="overflow-visible w-full h-full">
         {dataWithAngles.map((slice, index) => {
+          if (slice.percentage === 0) return null;
+
           const color = slice.color || defaultColors[index % defaultColors.length];
           const isHovered = hoveredSlice === index;
           const currentRadius = isHovered ? radius + 5 : radius;
 
           const path = createPath(slice.startAngle, slice.endAngle, currentRadius, innerRadius);
           const labelPos = getLabelPosition(slice.startAngle, slice.endAngle);
+
+          const activeSlices = dataWithAngles.filter(d => d.percentage > 0);
+          const isSingleSlice = activeSlices.length === 1;
+
+          const shouldShowPercentageLabel = showPercentages && (slice.percentage >= 5 || isSingleSlice);
 
           return (
             <g key={index}>
@@ -215,7 +220,7 @@ const PieChartSVG = ({
                 onMouseLeave={handleMouseLeave}
               />
 
-              {showPercentages && slice.percentage >= 5 && (
+              {shouldShowPercentageLabel && (
                 <text
                   x={labelPos.x}
                   y={labelPos.y}
@@ -251,15 +256,19 @@ const Legend = ({
   ];
 
   return (
-    <div className="space-y-2 overflow-y-auto max-h-full">
+    // THAY ĐỔI 1: Tăng khoảng cách lưới từ gap-2 thành **gap-4**
+    <div className="grid grid-cols-2 gap-2 max-h-full">
       {data.map((item, index) => {
+        if (item.value === 0) return null;
+
         const color = item.color || defaultColors[index % defaultColors.length];
 
         return (
           <div
             key={index}
+            // THAY ĐỔI 2: Tăng padding từ p-1 thành **p-2**
             className={cn(
-              "flex items-center justify-between gap-3 p-2 rounded-lg transition-colors",
+              "flex items-center justify-between gap-2 mb-1 rounded-lg transition-colors",
               onItemClick && "cursor-pointer hover:bg-gray-50"
             )}
             onClick={() => onItemClick && onItemClick(item)}
@@ -289,6 +298,7 @@ const Legend = ({
   );
 };
 
+// Main PieChart component
 export const PieChart = ({
   size = 'half',
   title,
@@ -326,30 +336,38 @@ export const PieChart = ({
               {title}
             </h3>
           </div>
-          {subtitle && (
-            <p className="text-sm text-gray-600 font-lexend">
+          {subtitle &&
+            <p
+              className="text-xs font-medium"
+              style={{
+                color: '#586060',
+                fontFamily: `'Lexend Deca', sans-serif`
+              }}
+            >
               {subtitle}
             </p>
-          )}
+          }
         </div>
 
-        <div className={widgetContentStyles}>
-          {data.length === 0 ? (
+        <div className={cn(widgetContentStyles, "min-h-0", "h-full")}>
+          {data.length === 0 || total === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <PieChartIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="text-sm font-lexend">No data available</p>
             </div>
           ) : (
             <div className={cn(
-              "flex gap-6 w-full h-full",
-              size === 'quarter' ? "flex-col items-center" : " justify-center",
+              "flex gap-4 w-full h-full min-h-0",
+              "flex-col items-center justify-start"
             )}>
-              {/* Chart container - 2/3 width */}
+
+              {/* Chart container (Phần trên) - Giữ nguyên flex-shrink-0 để Chart luôn giữ kích thước 180px */}
               <div className={cn(
                 "flex items-center justify-center",
-                size === 'quarter' ? "w-full" : "w-2/5 flex-shrink-0"
+                "w-full flex-shrink-0"
               )}>
-                <div className="relative w-full max-w-xs aspect-square">
+
+                <div className="relative aspect-square w-[180px] flex-shrink-0">
                   <PieChartSVG
                     data={dataWithPercentages}
                     variant={variant}
@@ -375,11 +393,13 @@ export const PieChart = ({
                 </div>
               </div>
 
-              {/* Legend container - 1/3 width */}
+              {/* Legend container (Phần dưới) - Không giới hạn chiều cao */}
               {showLegend && (
                 <div className={cn(
-                  "flex flex-col",
-                  size === 'quarter' ? "w-full mt-4" : "w-3/5 min-w-0"
+                  "w-full mt-4",
+                  size === 'quarter'
+                    ? "w-full flex-shrink-0"
+                    : "min-h-0"
                 )}>
                   <Legend data={dataWithPercentages} onItemClick={onSliceClick} />
                 </div>

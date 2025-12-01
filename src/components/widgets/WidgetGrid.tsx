@@ -29,8 +29,7 @@ export const WidgetContainer = ({ size, children, className }: WidgetContainerPr
     <div className={cn(
       responsiveSizeClasses[size],
       "transition-all duration-200",
-      // ✅ KHẮC PHỤC LỖI VIỀN: Áp dụng bo góc, đổ bóng VÀ cắt góc ở đây
-      "rounded-2xl shadow-lg overflow-hidden",
+      "overflow-hidden bg-amber-950 rounded-2xl bg-transparent",
       className
     )}>
       {children}
